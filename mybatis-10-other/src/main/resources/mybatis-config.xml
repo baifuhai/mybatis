@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+		PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+
+	<properties resource="db.properties"/>
+
+	<settings>
+		<setting name="mapUnderscoreToCamelCase" value="true"/>
+	</settings>
+
+	<typeHandlers>
+
+		<!-- 使用枚举索引的 TypeHandler -->
+		<!--<typeHandler handler="org.apache.ibatis.type.EnumOrdinalTypeHandler" javaType="com.test.entity.EmpStatus"/>-->
+
+		<!-- 使用我们自定义的 TypeHandler -->
+		<!--<typeHandler handler="com.test.typehandler.MyEmpStatusEnumTypeHandler" javaType="com.test.entity.EmpStatus"/>-->
+
+		<!-- 也可以在处理某个字段的时候告诉 MyBatis 用什么类型处理器
+				保存：#{empStatus, typeHandler=com.test.typehandler.MyEmpStatusEnumTypeHandler}
+				查询：
+					<resultMap type="com.test.entity.Emp" id="resultMapEnum">
+				 		<id column="id" property="id"/>
+				 		<result column="status" property="status" typeHandler="com.test.typehandler.MyEmpStatusEnumTypeHandler"/>
+				 	</resultMap>
+				注意：应该保证保存数据和查询数据用的 TypeHandler 是一样的
+		-->
+	</typeHandlers>
+
+	<plugins>
+		<plugin interceptor="com.github.pagehelper.PageInterceptor"/>
+	</plugins>
+
+	<environments default="mysql">
+		<environment id="mysql">
+			<transactionManager type="JDBC"/>
+			<dataSource type="POOLED">
+				<property name="driver" value="${mysql.driver}"/>
+				<property name="url" value="${mysql.url}"/>
+				<property name="username" value="${mysql.username}"/>
+				<property name="password" value="${mysql.password}"/>
+			</dataSource>
+		</environment>
+	</environments>
+
+	<mappers>
+		<mapper resource="mapper/EmpMapper.xml"/>
+	</mappers>
+
+</configuration>

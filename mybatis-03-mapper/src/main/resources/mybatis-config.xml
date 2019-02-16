@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+		PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+
+	<properties resource="db.properties"/>
+
+	<settings>
+		<setting name="mapUnderscoreToCamelCase" value="true"/>
+
+		<!-- 如果值为null，映射为OTHER，oracle不识别，改为NULL -->
+		<setting name="jdbcTypeForNull" value="NULL"/>
+
+		<!-- 级联对象懒加载，可以在association和collection用fetchType属性重写 -->
+		<setting name="lazyLoadingEnabled" value="true"/>
+		<!-- 级联对象的属性懒加载 -->
+		<setting name="aggressiveLazyLoading" value="false"/>
+	</settings>
+
+	<environments default="mysql">
+		<environment id="mysql">
+			<transactionManager type="JDBC"/>
+			<dataSource type="POOLED">
+				<property name="driver" value="${mysql.driver}"/>
+				<property name="url" value="${mysql.url}"/>
+				<property name="username" value="${mysql.username}"/>
+				<property name="password" value="${mysql.password}"/>
+			</dataSource>
+		</environment>
+	</environments>
+
+	<mappers>
+		<mapper resource="mapper/EmpMapper.xml"/>
+		<mapper resource="mapper/DeptMapper.xml"/>
+	</mappers>
+
+</configuration>

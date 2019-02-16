@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.test.dao.DeptMapper">
+
+	<select id="getById" resultType="com.test.entity.Dept">
+		select * from dept where id = #{id}
+	</select>
+
+	<!-- 查询部门的同时把该部门的所有员工也查出来 -->
+
+	<!--
+		方法1：联表查询，使用 collection 定义关联的集合元素的属性封装规则
+	-->
+	<resultMap type="com.test.entity.Dept" id="resultMapCollection01">
+		<id column="id" property="id"/>
+		<result column="name" property="name"/>
+
+		<!--
+			collection 定义关联集合类型的属性的封装规则
+			ofType：指定集合里面元素的类型
+		-->
+		<collection property="emps" ofType="com.test.entity.Emp">
+			<!-- 定义这个集合中元素的封装规则 -->
+			<id column="emp_id" property="id"/>
+			<result column="last_name" property="lastName"/>
+			<result column="email" property="email"/>
+			<result column="gender" property="gender"/>
+			<result column="dept_id" property="deptId"/>
+		</collection>
+	</resultMap>
+
+	<select id="testResultMapCollection01" resultMap="resultMapCollection01">
+		select
+			d.id, d.name, e.id emp_id, e.last_name, e.email, e.gender, e.dept_id
+		from
+			dept d
+		left join
+			emp e on d.id = e.dept_id
+	</select>
+
+	<!--
+		方法2：单表查询，再使用 collection 进行分步查询
+	-->
+	<resultMap type="com.test.entity.Dept" id="resultMapCollection02">
+		<id column="id" property="id"/>
+		<id column="name" property="name"/>
+		<collection property="emps" select="com.test.dao.EmpMapper.getByDeptId" column="{deptId=id}" fetchType="lazy"/>
+	</resultMap>
+
+	<select id="testResultMapCollection02" resultMap="resultMapCollection02">
+		select * from dept
+	</select>
+
+	<!--
+		扩展：
+		1. 多列的值传递过去：
+			将多列的值封装map传递
+			column="{key1=column1,key2=column2}"
+
+		2. fetchType="lazy"：表示使用延迟加载
+				- lazy：延迟
+				- eager：立即
+	-->
+
+</mapper>

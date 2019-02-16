@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.test.dao.EmpMapper">
+
+	<!-- parameterType：参数类型，可以省略 -->
+
+	<!--
+		获取自增主键的值：
+			mysql 支持自增主键，自增主键值的获取，mybatis 也是利用 statement.getGeneratedKeys()
+			useGeneratedKeys="true"；使用自增主键获取主键值策略
+			keyProperty；指定对应的主键属性，也就是 mybatis 获取到主键值以后，将这个值封装给 javaBean 的哪个属性
+	-->
+	<insert id="insert" parameterType="com.test.entity.Emp" useGeneratedKeys="true" keyProperty="id">
+		insert into emp
+			(last_name, email, gender)
+		values
+			(#{lastName}, #{email}, #{gender})
+	</insert>
+
+	<!--
+		获取非自增主键的值：
+			oracle 不支持自增，oracle使用序列来模拟自增
+			每次插入的数据的主键是从序列中拿到的值，如何获取到这个值
+	 -->
+	<insert id="insert2" databaseId="oracle">
+		<!--
+			keyProperty：查出的主键值封装给 javaBean 的哪个属性
+			order="BEFORE"：当前sql在插入sql之前运行
+			order="AFTER"：当前sql在插入sql之后运行
+			resultType：查出的数据的返回值类型
+
+			BEFORE 运行顺序：
+				先运行 selectKey 查询 id 的 sql，把查出的 id 值赋值给 javaBean 的 id 属性
+				再运行插入的 sql，id 用的是 javaBean 的 id 属性
+			AFTER 运行顺序：
+				先运行插入的 sql，id 用的是从序列中取出的新值
+				再运行 selectKey 查询 id 的 sql，把查出的 id 值赋值给 javaBean 的 id 属性
+		-->
+		<selectKey keyProperty="id" order="BEFORE" resultType="Integer">
+			<!-- 编写查询主键的sql语句 -->
+
+			<!-- BEFORE -->
+			select EMPLOYEES_SEQ.nextval from dual
+
+			<!-- AFTER
+			 select EMPLOYEES_SEQ.currval from dual -->
+		</selectKey>
+
+		<!-- BEFORE -->
+		insert into emp (id, last_name, email, gender)
+		values (#{id}, #{lastName}, #{email}, #{gender})
+
+		<!-- AFTER
+		insert into emp (id, last_name, email, gender)
+		values (EMPLOYEES_SEQ.nextval, #{lastName}, #{email}, #{gender}) -->
+	</insert>
+
+	<update id="update" parameterType="com.test.entity.Emp">
+		update emp
+		set last_name = #{lastName}, email = #{email}, gender = #{gender}
+		where id = #{id}
+	</update>
+
+	<delete id="delete" parameterType="int">
+		delete from emp
+		where id = #{id}
+	</delete>
+
+	<select id="getById" resultType="com.test.entity.Emp">
+		select id, last_name, email, gender
+		from emp
+		where id = #{id}
+	</select>
+
+	<select id="getByIdAndLastName" resultType="com.test.entity.Emp">
+		select * from emp where id = #{param1} and last_name = #{param2}
+	</select>
+
+	<select id="getByIdAndLastName2" resultType="com.test.entity.Emp">
+		select * from emp where id = #{id} and last_name = #{lastName}
+	</select>
+
+	<select id="getByIdAndLastName3" resultType="com.test.entity.Emp">
+		select * from emp where id = #{id} and last_name = #{lastName}
+	</select>
+
+	<select id="getByIdAndLastName4" resultType="com.test.entity.Emp">
+		select * from emp where id = #{id} and last_name = #{lastName}
+	</select>
+
+	<select id="testGet01" resultType="com.test.entity.Emp">
+		select * from ${tableName} where id = ${id} and last_name = #{lastName}
+	</select>
+
+	<!-- resultType：如果返回的是一个集合，要写集合中元素的类型 -->
+	<select id="testGetEmps01" resultType="com.test.entity.Emp">
+		select * from emp where id &gt; #{id}
+	</select>
+
+	<select id="testGetEmps02" resultType="java.util.Map">
+		select * from emp where id = #{id}
+	</select>
+
+	<select id="testGetEmps03" resultType="com.test.entity.Emp">
+		select * from emp where id &gt; #{id}
+	</select>
+
+	<!--
+		自定义某个 javaBean 的封装规则
+			type：自定义规则的Java类型
+			id：唯一标识
+	  -->
+	<resultMap type="com.test.entity.Emp" id="resultMap01">
+		<!--
+			定义主键列的封装规则
+			id：定义主键会底层有优化
+			column：指定数据库表的列
+			property：指定 javaBean 属性
+		  -->
+		<id column="id" property="id"/>
+		<!-- 定义普通列封装规则 -->
+		<result column="last_name" property="lastName"/>
+		<!-- 其他不指定的列会自动封装，我们只要写 resultMap 就把全部的映射规则都写上 -->
+		<result column="email" property="email"/>
+		<result column="gender" property="gender"/>
+	</resultMap>
+
+	<!-- resultMap：自定义结果集映射规则的id -->
+	<select id="testResultMap01" resultMap="resultMap01">
+		select * from emp where id = #{id}
+	</select>
+
+	<!--
+		查询 Emp 的同时查询员工对应的部门
+	-->
+
+	<!--
+		方法0：联表查询，级联属性封装结果集
+	-->
+	<resultMap type="com.test.entity.Emp" id="resultMapAssociation00">
+		<id column="id" property="id"/>
+		<result column="last_name" property="lastName"/>
+		<result column="email" property="email"/>
+		<result column="gender" property="gender"/>
+		<result column="dept_id" property="deptId"/>
+		<result column="dept_id" property="dept.id"/>
+		<result column="dept_name" property="dept.name"/>
+	</resultMap>
+
+	<select id="testResultMapAssociation00" resultMap="resultMapAssociation00">
+		select
+			e.id, e.last_name, e.email, e.gender, e.dept_id, d.name dept_name
+		from
+			emp e, dept d
+		where
+			e.dept_id = d.id
+			and e.id = #{id}
+	</select>
+
+	<!--
+		方法1：联表查询，使用 association 定义关联的单个对象的属性封装规则
+	 -->
+	<resultMap type="com.test.entity.Emp" id="resultMapAssociation01">
+		<id column="id" property="id"/>
+		<result column="last_name" property="lastName"/>
+		<result column="email" property="email"/>
+		<result column="gender" property="gender"/>
+		<result column="dept_id" property="deptId"/>
+
+		<!--
+			association 可以指定联合的 javaBean 对象
+			property：指定哪个属性是联合的对象
+			javaType：指定这个属性对象的类型（不能省略）
+		-->
+		<association property="dept" javaType="com.test.entity.Dept">
+			<id column="dept_id" property="id"/>
+			<result column="dept_name" property="name"/>
+		</association>
+	</resultMap>
+
+	<select id="testResultMapAssociation01" resultMap="resultMapAssociation01">
+		select
+			e.id, e.last_name, e.email, e.gender, e.dept_id, d.name dept_name
+		from
+			emp e, dept d
+		where
+			e.dept_id = d.id
+			and e.id = #{id}
+	</select>
+
+	<!--
+		方法2：单表查询，使用 association 进行分步查询
+			1、先用员工 id 查询员工信息
+			2、根据员工信息中的 dept_id 去部门表查部门信息
+			3、部门设置到员工中
+	-->
+	<resultMap type="com.test.entity.Emp" id="resultMapAssociation02">
+		<id column="id" property="id"/>
+		<result column="last_name" property="lastName"/>
+		<result column="email" property="email"/>
+		<result column="gender" property="gender"/>
+		<result column="dept_id" property="deptId"/>
+
+		<!--
+			association 定义关联对象的封装规则，会使用一级缓存
+			property：关联对象的属性名
+            select：查询的方法，全类名.方法名
+            column：指定将哪一列的值传给 select 指定的方法
+
+            流程：使用select指定的方法（传入 column 指定的这列参数的值）查出对象，并封装给 property 指定的属性
+         -->
+		<association property="dept" select="com.test.dao.DeptMapper.getById" column="dept_id"/>
+	</resultMap>
+
+	<select id="testResultMapAssociation02" resultMap="resultMapAssociation02">
+		select * from emp where id &gt;= #{id}
+		<if test="_parameter != null">
+			and 1=1
+		</if>
+	</select>
+
+	<select id="getByDeptId" resultType="com.test.entity.Emp">
+		select * from emp where dept_id = #{deptId}
+	</select>
+
+	<!--
+		鉴别器：
+			mybatis 可以使用 discriminator 判断某列的值，然后根据某列的值改变封装行为
+
+		需求：
+			如果查出的是女生：就把部门信息查询出来，否则不查询
+			如果是男生，把last_name这一列的值赋值给email
+	-->
+	<resultMap type="com.test.entity.Emp" id="resultMapDiscriminator">
+		<id column="id" property="id"/>
+		<result column="last_name" property="lastName"/>
+		<result column="email" property="email"/>
+		<result column="gender" property="gender"/>
+		<result column="dept_id" property="deptId"/>
+
+		<!--
+            column：指定判定的列名
+            javaType：列值对应的java类型
+		-->
+		<discriminator column="gender" javaType="string">
+			<!-- resultType 或 resultMap，不能少 -->
+			<!-- 女生 -->
+			<case value="f" resultType="com.test.entity.Emp">
+				<association property="dept"
+							 select="com.test.dao.DeptMapper.getById"
+							 column="dept_id">
+				</association>
+			</case>
+			<!-- 男生 -->
+			<case value="m" resultType="com.test.entity.Emp">
+				<id column="id" property="id"/>
+				<result column="last_name" property="lastName"/>
+				<result column="last_name" property="email"/>
+				<result column="gender" property="gender"/>
+			</case>
+		</discriminator>
+	</resultMap>
+
+	<select id="testResultMapDiscriminator" resultMap="resultMapDiscriminator">
+		select * from emp
+	</select>
+
+</mapper>

@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.test.dao.EmpMapper">
+
+	<!--
+		if：判断
+		where：去除开头的 and 或 or
+	 -->
+	<select id="testIf" resultType="com.test.entity.Emp">
+		select * from emp
+		<where>
+			<!--
+				test：判断表达式（OGNL）
+            	OGNL 参照 PPT 或者官方文档
+            	从参数中取值进行判断
+				特殊符号写转义字符
+            -->
+			<if test="id != null">
+				and id = #{id}
+			</if>
+			<if test="lastName != null &amp;&amp; lastName != &quot;&quot;">
+				and last_name like #{lastName}
+			</if>
+			<if test="email != null and email.trim() != ''">
+				and email = #{email}
+			</if>
+			<!-- ognl 会进行字符串与数字的转换 "0" == 0 -->
+			<if test="gender == 'm'.toString() or gender == 'f'.toString()">
+				and gender = #{gender}
+			</if>
+		</where>
+	</select>
+
+	<!--
+		trim：字符串截取
+	 -->
+	<select id="testTrim" resultType="com.test.entity.Emp">
+		select * from emp
+		<!--
+			prefix：添加前缀
+			prefixOverrides：去前缀
+			suffix：添加后缀
+			suffixOverrides：去后缀
+        -->
+		<trim prefix="where" suffixOverrides="and">
+			<if test="id != null">
+				id = #{id} and
+			</if>
+			<if test="lastName != null and lastName != ''">
+				last_name like #{lastName} and
+			</if>
+			<if test="email != null and email != ''">
+				email = #{email} and
+			</if>
+			<if test="gender != null and gender != ''">
+				gender = #{gender} and
+			</if>
+		</trim>
+	</select>
+
+	<!--
+		choose, when, otherwise：分支选择
+	 -->
+	<select id="testChoose" resultType="com.test.entity.Emp">
+		select * from emp
+		<where>
+			<!--
+				如果带了 id 就用 id 查，如果带了 lastName 就用 lastName 查
+				只会进入其中一个
+			-->
+			<choose>
+				<when test="id != null">
+					id = #{id}
+				</when>
+				<when test="lastName != null">
+					last_name = #{lastName}
+				</when>
+				<when test="email != null">
+					email = #{email}
+				</when>
+				<otherwise>
+					gender != ''
+				</otherwise>
+			</choose>
+		</where>
+	</select>
+
+	<!--
+		set：去除结尾的 ,
+	-->
+	<update id="testSet" parameterType="com.test.entity.Emp">
+		update emp
+		<set>
+			<if test="lastName != null">
+				last_name = #{lastName},
+			</if>
+			<if test="email != null">
+				email = #{email},
+			</if>
+			<if test="gender != null">
+				gender = #{gender}
+			</if>
+		</set>
+		where id = #{id}
+	</update>
+
+	<!--
+		foreach：遍历集合
+	-->
+	<select id="testForeach" resultType="com.test.entity.Emp">
+		select * from emp
+		where id in
+		<!--
+			collection：要遍历的集合
+			item：当前遍历的元素
+			separator：分隔符
+			open：开始字符
+			close：结束字符
+			index：索引
+					遍历 list 的时候 index 是索引，item 是当前值
+					遍历 map 的时候 index 是 map 的 key，item 是 map 的 value
+
+			#{变量名} 就能取出变量的值
+		-->
+		<foreach collection="idList" item="id" open="(" separator="," close=")">
+			#{id}
+		</foreach>
+	</select>
+
+	<!-- 批量新增 -->
+
+	<!-- mysql 方法1 -->
+	<insert id="testMysqlInsertBatch">
+		insert into emp
+			(last_name, email, gender, dept_id)
+		values
+		<foreach collection="empList" item="emp" separator=",">
+			(#{emp.lastName}, #{emp.email}, #{emp.gender}, #{emp.deptId})
+		</foreach>
+	</insert>
+
+	<!--
+		mysql 方法2
+		这种方式需要数据库连接属性 allowMultiQueries=true
+        这种分号分隔多个 sql 可以用于其他的批量操作（删除，修改）
+	-->
+	<insert id="testMysqlInsertBatch2">
+        <foreach collection="empList" item="emp" separator=";">
+			insert into emp
+				(last_name, email, gender, dept_id)
+			values
+				(#{emp.lastName}, #{emp.email}, #{emp.gender}, #{emp.deptId})
+        </foreach>
+    </insert>
+
+	<!--
+		oracle 数据库批量保存：
+
+		oracle 不支持values(),(),()
+
+		oracle 支持的批量方式
+		1、多个 insert 放在 begin end 里面
+			begin
+				insert into emp (...) values (...);
+				insert into emp (...) values (...);
+			end;
+		2、利用中间表：
+			insert into emp (id, last_name, email)
+				select employees_seq.nextval, lastName, email from (
+					select 'a' lastName, 'a' email from dual
+					union
+					select 'b' lastName, 'b' email from dual
+					union
+					select 'c' lastName, 'c' email from dual
+				)
+	-->
+	<!-- oracle 方法1 -->
+	<insert id="testOracleInsertBatch">
+		begin
+		<foreach collection="empList" item="emp">
+			insert into emp
+				(id, last_name, email, gender, dept_id)
+			values
+				(emp_seq.nextval, #{emp.lastName}, #{emp.email}, #{emp.gender}, #{emp.deptId})
+		</foreach>
+		end;
+	</insert>
+
+	<!-- oracle 方法2 -->
+	<insert id="testOracleInsertBatch2">
+		insert into emp
+			(id, last_name, email, gender, dept_id)
+		select emp_seq.nextval, lastName, email, gender, deptId from
+		<foreach collection="empList" item="emp" open="(" separator="union" close=")">
+			select #{emp.lastName} lastName, #{emp.email} email, #{emp.gender} gender, #{emp.deptId} deptId from dual
+		</foreach>
+	</insert>
+
+	<!--
+		两个内置参数：
+		不只是方法传递过来的参数可以被用来判断，取值，还有两个内置参数：
+		_parameter：代表整个参数
+			单个参数：_parameter 就是这个参数
+			多个参数：参数会被封装为一个map，_parameter就是代表这个 map
+
+	 	_databaseId：如果配置了 databaseIdProvider 标签
+			_databaseId就是代表当前数据库的别名
+	  -->
+	<select id="testInnerParameter" resultType="com.test.entity.Emp">
+		<if test="_databaseId == null or _databaseId == 'mysql'">
+			select * from emp
+			<if test="_parameter != null">
+				where id = #{_parameter.id}
+			</if>
+		</if>
+		<if test="_databaseId == 'oracle'">
+			select * from emp
+			<if test="_parameter != null">
+				where id = #{_parameter.id}
+			</if>
+		</if>
+	</select>
+
+	<!-- bind：可以将OGNL表达式的值绑定到一个变量中，方便后来引用这个变量的值 -->
+	<select id="testBind" resultType="com.test.entity.Emp">
+		<bind name="_lastName" value="'%' + lastName + '%'"/>
+		select * from emp where last_name like #{_lastName}
+	</select>
+
+	<!--
+		抽取可重用的 sql 片段，方便引用
+	-->
+	<sql id="column">
+		last_name, email, gender, dept_id, ${testColumn}
+	</sql>
+
+	<select id="testSqlInclude" resultType="com.test.entity.Emp">
+		select
+			<!--
+				include 标签来引用抽取的 sql 片段
+				include 里面还可以自定义一些 property，sql 标签内部就能使用自定义的属性
+						取值的正确方式 ${prop}，不能使用这种方式 #{prop}
+			-->
+			<include refid="column">
+				<property name="testColumn" value="id"/>
+			</include>
+		from
+			emp
+	</select>
+
+</mapper>
