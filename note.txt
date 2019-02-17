@@ -87,3 +87,21 @@ ${}：取出的值直接拼装在sql语句中，会有安全问题
     1、#{email, jdbcType=NULL}
     2、jdbcTypeForNull=NULL
         <setting name="jdbcTypeForNull" value="NULL"/>
+
+================================= OGNL =================================
+
+OGNL（Object Graph Navigation Language）
+对象图导航语言，这是一种强大的表达式语言，通过它可以非常方便的来操作对象属性，类似于我们的EL，SpEL等
+
+访问对象属性：		person.name
+调用方法：			person.getName()
+调用静态属性/方法：	@java.lang.Math@PI
+					@java.util.UUID@randomUUID()
+调用构造方法：		new com.atguigu.bean.Person('admin').name
+运算符：				+,-*,/,%
+逻辑运算符：			in,not in,>,>=,<,<=,==,!=
+
+================================= ssm =================================
+
+官方整合示例，jpetstore
+https://github.com/mybatis/jpetstore-6

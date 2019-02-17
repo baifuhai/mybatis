@@ -67,6 +67,9 @@ public class Tests {
     /**
      * 批量：预编译 sql 1 次，设置参数 10000 次， 执行 1 次
      * 非批量：（预编译 sql，设置参数，执行）* 10000 次
+     *
+     * 1、批量操作是在 session.commit() 以后才发送 sql 语句给数据库进行执行的
+     * 2、如果我们想让其提前执行，以方便后续可能的查询操作获取数据，我们可以使用 sqlSession.flushStatements() 方法，让其直接冲刷到数据库进行执行
      */
     @Test
     public void testBatch() throws IOException {
@@ -81,7 +84,10 @@ public class Tests {
             EmpMapper empMapper = session.getMapper(EmpMapper.class);
 
             for (int i = 0; i < 10000; i++) {
-                empMapper.insert(new Emp("a", "a@126.com", "m", 1));
+                if (i == 5000) {
+                    session.flushStatements();
+                }
+                empMapper.insert(new Emp("a", "a@126.com", "m", 1, EmpStatus.LOGIN));
             }
 
             session.commit();

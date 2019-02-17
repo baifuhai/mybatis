@@ -39,6 +39,7 @@ public class Tests {
      * 		同一个 sqlSession 查询到的数据会放在自己的缓存中
      * 		以后如果需要获取相同的数据，直接从缓存中拿，不会再去查询数据库
      * 		如果两次查询之间执行了增删改操作（清除一级二级缓存）或调用 sqlSession 的 clearCache（清除一级缓存），则还会查数据库
+     * 		key: hashCode + 查询的SqlId + 编写的sql查询语句 + 参数
      *
      * 二级缓存：全局缓存，namespace 级别的缓存。一个 namespace 对应一个二级缓存
      * 		工作机制：

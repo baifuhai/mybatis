@@ -19,6 +19,14 @@
 		1、使用 select 标签定义调用存储过程
 		2、statementType="CALLABLE"：表示要调用存储过程
 		3、{call procedure_name(params)}
+
+		create or replace procedure hello_test(p_start in int, p_end in int, p_count out int, ref_cur out sys_refcursor) AS
+		BEGIN
+			select count(*) into p_count from emp;
+			open ref_cur for
+				select * from (select e.*, rownum rn from emp e where rownum < p_end)
+				where rn > p_start;
+		END hello_test;
 	-->
 	<select id="getPageByProcedure" statementType="CALLABLE">
 		{call hello_test(
