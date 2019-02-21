@@ -2,6 +2,7 @@ package com.test.plugin;
 
 import org.apache.ibatis.executor.statement.StatementHandler;
 import org.apache.ibatis.mapping.BoundSql;
+import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.plugin.Interceptor;
 import org.apache.ibatis.plugin.Intercepts;
 import org.apache.ibatis.plugin.Invocation;
@@ -32,7 +33,7 @@ public class MyFirstPlugin implements Interceptor {
         String methodName = invocation.getMethod().getName();
         System.out.println("MyFirstPlugin intercept... method: " + invocation.getMethod());
         if ("prepare".equals(methodName)) {
-            //prepare(invocation);
+            prepare(invocation);
         } else if ("parameterize".equals(methodName)) {
             parameterize(invocation);
         }
@@ -44,28 +45,27 @@ public class MyFirstPlugin implements Interceptor {
         StatementHandler statementHandler = (StatementHandler) invocation.getTarget();
         BoundSql boundSql = statementHandler.getBoundSql();
 
-        System.out.println("parameterObject: " + boundSql.getParameterObject());
+        System.out.println("boundSql.sql before: " + boundSql.getSql());
 
-        MetaObject boundSqlMetaObject = SystemMetaObject.forObject(boundSql);
-        boundSqlMetaObject.setValue("parameterObject", 2);
+        //修改 sql 语句
+        SystemMetaObject.forObject(boundSql).setValue("sql", "select * from (" + boundSql.getSql() + ") t");
 
-        System.out.println("parameterObject: " + boundSql.getParameterObject());
+        System.out.println("boundSql.sql after: " + boundSql.getSql());
     }
 
     public void parameterize(Invocation invocation) {
-        Object target = invocation.getTarget();//org.apache.ibatis.executor.statement.RoutingStatementHandler
+        StatementHandler statementHandler = (StatementHandler) invocation.getTarget();
 
-        //动态的改变一下 sql 运行的参数：本来是查询1号员工，实际查询2号员工
-        //拿到 StatementHandler -> ParameterHandler -> parameterObject
+        Object parameterObject = statementHandler.getParameterHandler().getParameterObject();
+        MappedStatement mappedStatement = (MappedStatement) SystemMetaObject.forObject(statementHandler).getValue("delegate.mappedStatement");
+        if (mappedStatement.getId().matches(".+\\.getById$") && parameterObject != null && parameterObject instanceof Integer) {
+            System.out.println("parameterHandler.parameterObject before: " + parameterObject);
 
-        //拿到 target 的元数据
-        MetaObject metaObject = SystemMetaObject.forObject(target);
+            //修改 sql 语句要用的参数
+            SystemMetaObject.forObject(statementHandler).setValue("parameterHandler.parameterObject", 2);
 
-        Object value = metaObject.getValue("parameterHandler.parameterObject");
-        System.out.println("sql语句用的参数是：" + value);
-
-        //修改 sql 语句要用的参数
-        metaObject.setValue("parameterHandler.parameterObject", 2);
+            System.out.println("parameterHandler.parameterObject after: " + statementHandler.getParameterHandler().getParameterObject());
+        }
     }
 
     /**
@@ -77,15 +77,6 @@ public class MyFirstPlugin implements Interceptor {
         System.out.println("MyFirstPlugin plugin... target: " + target);
         Object wrap = Plugin.wrap(target, this);
         return wrap;
-    }
-
-    public Object plugin2(Object target) {
-        //应该不用判断
-        if (target instanceof StatementHandler) {
-            return Plugin.wrap(target, this);
-        } else {
-            return target;
-        }
     }
 
     /**

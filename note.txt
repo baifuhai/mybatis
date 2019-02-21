@@ -105,3 +105,60 @@ OGNL（Object Graph Navigation Language）
 
 官方整合示例，jpetstore
 https://github.com/mybatis/jpetstore-6
+
+=======================================================================
+
+StatementHandler
+    Configuration configuration;
+    ObjectFactory objectFactory;
+    TypeHandlerRegistry typeHandlerRegistry;
+    ResultSetHandler resultSetHandler;
+        Executor executor;
+        Configuration configuration;
+        MappedStatement mappedStatement;
+        RowBounds rowBounds;
+        ParameterHandler parameterHandler;
+        ResultHandler<?> resultHandler;
+        BoundSql boundSql;
+        TypeHandlerRegistry typeHandlerRegistry;
+        ObjectFactory objectFactory;
+        ReflectorFactory reflectorFactory;
+        ...
+    ParameterHandler parameterHandler;
+        TypeHandlerRegistry typeHandlerRegistry;
+        MappedStatement mappedStatement;
+        Object parameterObject;
+        BoundSql boundSql;
+        Configuration configuration;
+    Executor executor;
+    MappedStatement mappedStatement;
+        String resource;
+        Configuration configuration;
+        String id;
+        Integer fetchSize;
+        Integer timeout;
+        StatementType statementType;
+        ResultSetType resultSetType;
+        SqlSource sqlSource;
+        Cache cache;
+        ParameterMap parameterMap;
+        List<ResultMap> resultMaps;
+        boolean flushCacheRequired;
+        boolean useCache;
+        boolean resultOrdered;
+        SqlCommandType sqlCommandType;
+        KeyGenerator keyGenerator;
+        String[] keyProperties;
+        String[] keyColumns;
+        boolean hasNestedResultMaps;
+        String databaseId;
+        Log statementLog;
+        LanguageDriver lang;
+        String[] resultSets;
+    RowBounds rowBounds;
+    BoundSql boundSql;
+        String sql;
+        List<ParameterMapping> parameterMappings;
+        Object parameterObject;
+        Map<String, Object> additionalParameters;
+        MetaObject metaParameters;
